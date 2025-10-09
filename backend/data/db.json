@@ -1,0 +1,25 @@
+{
+  "users": [
+    {
+      "id": "7c92d925-cb7d-408c-b832-00c20b918e8b",
+      "name": "luke",
+      "email": "lukeifunaya@gmail.com",
+      "password": "$2b$10$6L988261UMt0H151PNHq.u0bUJqHT3oynvdY99cF7kuAVodYTTbcO"
+    },
+    {
+      "id": "f54c13e2-3ccd-4fc8-98fc-1e9d4d4f6c1d",
+      "name": "luke",
+      "email": "lukefaith20@gmail.com",
+      "password": "$2b$10$OuQRrA4rNW.6XB2oOg69OuUdNnjpFLqMRtXivF7lFY1.dtPMpDFnC"
+    }
+  ],
+  "projects": [
+    {
+      "id": "81d92918-3fb5-432b-b4f8-83b2a6c93c78",
+      "userId": "f54c13e2-3ccd-4fc8-98fc-1e9d4d4f6c1d",
+      "name": "delivery",
+      "description": "delivery mail",
+      "createdAt": "2025-10-09T19:42:15.790Z"
+    }
+  ]
+}

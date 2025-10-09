@@ -1,0 +1,56 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  projects  Project[]
+  comments  Comment[] @relation("UserComments")
+  createdAt DateTime  @default(now())
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  boards      Board[]
+  createdAt   DateTime @default(now())
+}
+
+model Board {
+  id        Int      @id @default(autoincrement())
+  title     String
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id])
+  frames    Frame[]
+  createdAt DateTime @default(now())
+}
+
+model Frame {
+  id        Int       @id @default(autoincrement())
+  name      String
+  boardId   Int
+  board     Board     @relation(fields: [boardId], references: [id])
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  userId    Int
+  user      User     @relation("UserComments", fields: [userId], references: [id])
+  frameId   Int
+  frame     Frame    @relation(fields: [frameId], references: [id])
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,62 @@
+{
+  "users": [
+    {
+      "id": "86610bc7-e0d0-4ae9-9c6f-05c23a0b7dbd",
+      "name": "Luke",
+      "email": "luke@example.com",
+      "password": "$2b$10$v0SWMCT.hkpR8sfDKZZJyut7xiVUGxcStzYmZyWvmlQVESQAQKsyy"
+    },
+    {
+      "id": "6a6c8557-7af9-480c-9e06-d0f8e88ebda8",
+      "name": "shade",
+      "email": "shade29@gmail.com",
+      "password": "$2b$10$ouky4Q4b3g4OpRiyIW9PV..0qjZJ5OzjsYOoODBWiS1DGeB8qksvq"
+    },
+    {
+      "id": "a6f78d57-970d-40c7-ab88-ae91f5a21c99",
+      "name": "faith",
+      "email": "lukefaith25@gmail.com",
+      "password": "$2b$10$qoYZYqso86GUNXuMYdqEgOXXc6qaWaIBDtqSU0hJjSbg9m7lzqCh2"
+    },
+    {
+      "id": "c78ecd43-fbb0-4366-94b4-ce1ad3bd02f5",
+      "name": "flow",
+      "email": "lukeifunaya10@gmail.com",
+      "password": "$2b$10$r0TJpE11k4eKjDBCzk92zeI/7F/5WIJsTzexiwNRHHCgVyFu/n0Lm"
+    },
+    {
+      "id": "54895fdc-cf8e-481d-8c39-5173051f59e8",
+      "name": "faith",
+      "email": "lukeifunaya30@gmail.com",
+      "password": "$2b$10$I2SirItRofzSjc4pWE6/JOpRE6PtXOXENHCQDX4goyiwN7zWcvQHq"
+    },
+    {
+      "id": "036b20ea-75be-497a-b1c3-469f696e5d6a",
+      "name": "wole",
+      "email": "luke@gmail.com",
+      "password": "$2b$10$XdzdHQrQWsimNIfWMYmnieFlwLSuaN/rwCxtrAVO66EpWExS8tkse"
+    },
+    {
+      "id": "d4221d1b-d06c-4dc3-99af-5e26268aab49",
+      "name": "faith",
+      "email": "lukefaith29@gmail.com",
+      "password": "$2b$10$sw2hC0MC4Xdx4GBLV81vkunbBTle37v5c0m1QsGvrdI5CY0fNAKVe"
+    }
+  ],
+  "projects": [
+    {
+      "id": "8fafa90e-710e-43c9-8b84-afb4967d9b43",
+      "userId": "d62354e6-1c9b-48b0-a9c9-cdcd5d025e01",
+      "name": "email",
+      "description": "email delivery",
+      "createdAt": "2025-10-09T11:05:18.576Z"
+    },
+    {
+      "id": "439cb68a-c765-4f70-8940-5dd64bea7c7d",
+      "userId": "b16b6ad7-3bde-4cc6-abd3-36f89279e2f8",
+      "name": "digital",
+      "description": "digital mind",
+      "createdAt": "2025-10-09T16:36:49.295Z"
+    }
+  ]
+}
