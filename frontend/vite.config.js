@@ -1,17 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
       '/api': {
-        target: mode === 'development'
-          ? 'http://localhost:5000'  // Local backend
-          : 'https://your-backend-service.onrender.com', // <-- Replace this!
+        target: 'http://localhost:5000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
-      }
-    }
-  }
-}))
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
+  build: {
+    outDir: 'dist',
+  },
+ base: './',
+
+})
