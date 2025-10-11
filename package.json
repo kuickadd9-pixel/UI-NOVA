@@ -1,5 +1,5 @@
 {
-  "name": "figma-app-backend",
+  "name": "uinova-backend",
   "version": "1.0.0",
   "description": "Backend for Figma-style app builder",
   "main": "server.js",
