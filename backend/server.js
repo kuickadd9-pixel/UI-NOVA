@@ -66,9 +66,11 @@ app.get("/api/profile", (req, res) => {
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
 // Fallback for React Router routes (signup, login, etc.)
-app.get("*", (req, res) => {
+// Fallback for React Router routes
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
 });
+
 
 // ===== Start Server =====
 app.listen(PORT, () => {
