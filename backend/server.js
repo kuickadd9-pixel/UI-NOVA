@@ -14,8 +14,6 @@ app.use(cors());
 app.use(express.json());
 
 // ===== Example API Routes =====
-
-// In-memory example users (replace with your database logic)
 let users = [];
 
 // Signup route
@@ -46,7 +44,7 @@ app.post("/api/login", async (req, res) => {
   res.json({ message: "Login successful", token });
 });
 
-// Example protected route
+// Protected route
 app.get("/api/profile", (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ message: "Missing token" });
@@ -61,14 +59,12 @@ app.get("/api/profile", (req, res) => {
 });
 
 // ===== Serve React Frontend =====
-// Serve frontend build folder
+const frontendBuildPath = path.join(__dirname, "frontend_build");
+app.use(express.static(frontendBuildPath));
 
-// Serve static frontend build
-app.use(express.static(path.join(__dirname, "frontend_build")));
-
-// Catch-all route for React Router
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend_build", "index.html"));
+// Catch-all route (React Router support)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendBuildPath, "index.html"));
 });
 
 // ===== Start Server =====
