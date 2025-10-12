@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
@@ -9,29 +10,47 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// In-memory users
-let users = [];
+// File paths
+const usersFile = path.join(__dirname, "db.json");
+const projectsFile = path.join(__dirname, "project.json");
 
-// API routes
+// Helper: Read JSON file
+function readJSON(file) {
+  if (!fs.existsSync(file)) return [];
+  const data = fs.readFileSync(file);
+  return JSON.parse(data);
+}
+
+// Helper: Write JSON file
+function writeJSON(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+// ========== AUTH ROUTES ==========
+
+// Signup
 app.post("/api/signup", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ message: "Email and password required" });
 
+  const users = readJSON(usersFile);
   if (users.find(u => u.email === email))
     return res.status(400).json({ message: "User already exists" });
 
   const hashed = await bcrypt.hash(password, 10);
   users.push({ email, password: hashed });
+  writeJSON(usersFile, users);
   res.status(201).json({ message: "User created" });
 });
 
+// Login
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
+  const users = readJSON(usersFile);
   const user = users.find(u => u.email === email);
   if (!user) return res.status(400).json({ message: "User not found" });
 
@@ -42,6 +61,7 @@ app.post("/api/login", async (req, res) => {
   res.json({ message: "Login successful", token });
 });
 
+// Get profile
 app.get("/api/profile", (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ message: "Missing token" });
@@ -55,19 +75,41 @@ app.get("/api/profile", (req, res) => {
   }
 });
 
-/// Serve React frontend
-const frontendBuildPath = path.join(__dirname, "frontend_build");
+// ========== PROJECT ROUTES ==========
 
-// Serve static files
-app.use(express.static(frontendBuildPath));
+// Add a project
+app.post("/api/projects", (req, res) => {
+  const { name, description } = req.body;
+  if (!name) return res.status(400).json({ message: "Project name required" });
 
-// Catch-all route (works with Express 4/5 + path-to-regexp v6+)
-app.use((req, res) => {
-  res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  const projects = readJSON(projectsFile);
+  const newProject = {
+    id: Date.now(),
+    name,
+    description: description || "",
+    createdAt: new Date().toISOString()
+  };
+  projects.push(newProject);
+  writeJSON(projectsFile, projects);
+  res.status(201).json({ message: "Project added", project: newProject });
 });
 
+// Get all projects
+app.get("/api/projects", (req, res) => {
+  const projects = readJSON(projectsFile);
+  res.json(projects);
+});
 
-// Start server
+// ========== FRONTEND ROUTE ==========
+
+const frontendBuildPath = path.join(__dirname, "frontend_build");
+app.use(express.static(frontendBuildPath));
+
+app.use((req, res) => {
+  res.sendFile(path.join(frontendBuildPath, "index.html"));
+});
+
+// Start Server
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
