@@ -9,10 +9,13 @@ const Dashboard = () => {
   const [editingProject, setEditingProject] = useState(null);
   const token = localStorage.getItem("token");
 
+  // ✅ Automatically use correct backend URL (Render or Local)
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
   // Fetch all projects
   const fetchProjects = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/projects", {
+      const res = await fetch(`${API_URL}/api/projects`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -30,7 +33,7 @@ const Dashboard = () => {
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5000/api/projects", {
+      const res = await fetch(`${API_URL}/api/projects`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,11 +57,15 @@ const Dashboard = () => {
   // Delete project
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this project?")) return;
-    await fetch(`http://localhost:5000/api/projects/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    fetchProjects();
+    try {
+      await fetch(`${API_URL}/api/projects/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchProjects();
+    } catch {
+      setMessage({ text: "Server error while deleting", type: "error" });
+    }
   };
 
   // Edit project
@@ -71,17 +78,14 @@ const Dashboard = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/projects/${editingProject.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(form),
-        }
-      );
+      const res = await fetch(`${API_URL}/api/projects/${editingProject.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(form),
+      });
       if (res.ok) {
         setEditingProject(null);
         setForm({ name: "", description: "" });
@@ -165,29 +169,33 @@ const Dashboard = () => {
 
       <h2 className="text-xl font-semibold mb-3">Your Projects</h2>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {projects.map((p) => (
-          <div
-            key={p.id}
-            className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition"
-          >
-            <h3 className="font-bold text-lg">{p.name}</h3>
-            <p className="text-gray-600">{p.description}</p>
-            <div className="mt-3 flex gap-3">
-              <button
-                onClick={() => handleEdit(p)}
-                className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(p.id)}
-                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
+        {projects.length > 0 ? (
+          projects.map((p) => (
+            <div
+              key={p.id}
+              className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition"
+            >
+              <h3 className="font-bold text-lg">{p.name}</h3>
+              <p className="text-gray-600">{p.description}</p>
+              <div className="mt-3 flex gap-3">
+                <button
+                  onClick={() => handleEdit(p)}
+                  className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p className="text-gray-600">No projects found.</p>
+        )}
       </div>
     </div>
   );
