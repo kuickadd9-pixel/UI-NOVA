@@ -1,12 +1,11 @@
 {
-  "name": "frontend",
+  "name":  "ui-novaa-root",
   "version": "1.0.0",
   "private": true,
   "type": "module",
  "scripts": {
   "dev": "vite",
   "build": "cd frontend && npm run render-build && cd ../backend && npm install",
-  "render-build": "npm install --include=dev && npm run build",
   "preview": "vite preview"
 },
 
