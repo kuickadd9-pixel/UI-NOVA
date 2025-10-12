@@ -62,11 +62,12 @@ app.get("/api/profile", (req, res) => {
 });
 
 // ===== Serve React Frontend =====
+// Serve React static files
 const frontendBuildPath = path.join(__dirname, "frontend_build");
 app.use(express.static(frontendBuildPath));
 
-// Catch-all route: send React's index.html for non-API routes
-app.get('*', (req, res) => {
+// Catch-all route
+app.get('/:catchAll(.*)', (req, res) => {
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
