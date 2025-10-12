@@ -1,9 +1,7 @@
 services:
   - type: web
-    name: ui-novaa
+    name: uinova-backend
     env: node
-    buildCommand: npm run build
+    rootDir: backend
+    buildCommand: npm install
     startCommand: npm start
-    envVars:
-      - key: NODE_VERSION
-        value: 22.16.0
