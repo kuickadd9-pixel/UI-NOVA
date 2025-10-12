@@ -1,11 +1,10 @@
 {
-  "name": "ui-novaa-frontend",
+  "name": "ui-novaa-root",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "cd frontend && npm install --include=dev && npm run build && cd ../backend && npm install",
+    "start": "node backend/server.js"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -13,10 +12,11 @@
     "react-router-dom": "^7.9.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.3",
-    "tailwindcss": "^3.4.18",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18",
     "vite": "^7.1.9"
   }
 }
