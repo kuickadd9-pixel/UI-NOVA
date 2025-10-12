@@ -14,7 +14,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 app.use(cors());
 app.use(express.json());
 
-// ===== In-memory Users Store (Example) =====
+// ===== In-memory Users Store =====
 let users = [];
 
 // ===== API ROUTES =====
@@ -65,8 +65,8 @@ app.get("/api/profile", (req, res) => {
 const frontendBuildPath = path.join(__dirname, "frontend_build");
 app.use(express.static(frontendBuildPath));
 
-// Catch-all route (React Router support)
-app.get('/:any(*)', (req, res) => {
+// ===== Catch-all route for React Router =====
+app.get('*', (req, res) => {
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
