@@ -6,6 +6,7 @@ export default function Signup() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -14,9 +15,11 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/signup", {
+      const API_URL = process.env.REACT_APP_API_URL;
+      const res = await fetch(`${API_URL}/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -25,13 +28,17 @@ export default function Signup() {
       if (!res.ok) {
         const data = await res.json();
         setError(data.message || "Signup failed");
+        setLoading(false);
         return;
       }
 
       alert("Signup successful! Please login.");
       navigate("/login");
     } catch (err) {
+      console.error(err);
       setError("Network error, please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,9 +78,12 @@ export default function Signup() {
         />
         <button
           type="submit"
-          className="bg-blue-600 text-white py-2 rounded-md w-full hover:bg-blue-700 transition"
+          className={`bg-blue-600 text-white py-2 rounded-md w-full hover:bg-blue-700 transition ${
+            loading ? "opacity-70 cursor-not-allowed" : ""
+          }`}
+          disabled={loading}
         >
-          Sign Up
+          {loading ? "Signing up..." : "Sign Up"}
         </button>
 
         <p className="text-center text-sm mt-4 text-gray-600">
