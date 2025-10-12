@@ -57,13 +57,14 @@ app.get("/api/profile", (req, res) => {
 
 /// Serve React frontend
 const frontendBuildPath = path.join(__dirname, "frontend_build");
+
+// Serve static files
 app.use(express.static(frontendBuildPath));
 
-// Catch-all route for React SPA (compatible with Express 4/5 + path-to-regexp v6+)
-app.get('/:any(.*)', (req, res) => {
+// Catch-all route (works with Express 4/5 + path-to-regexp v6+)
+app.use((req, res) => {
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
-
 
 
 // Start server
