@@ -62,14 +62,13 @@ app.get("/api/profile", (req, res) => {
 
 // ===== Serve React Frontend =====
 // Serve frontend build folder
-// Serve React frontend build
-// Serve React frontend build
-const frontendBuildPath = path.join(__dirname, "frontend_build");
-app.use(express.static(frontendBuildPath));
 
-// Fallback route for React Router
-app.get('*', (req, res) => {
-  res.sendFile(path.join(frontendBuildPath, 'index.html'));
+// Serve static frontend build
+app.use(express.static(path.join(__dirname, "frontend_build")));
+
+// Catch-all route for React Router
+app.get('/*', (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend_build", "index.html"));
 });
 
 // ===== Start Server =====
