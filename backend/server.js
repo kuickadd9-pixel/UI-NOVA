@@ -64,10 +64,11 @@ app.get("/api/profile", (req, res) => {
 // ===== Serve React Frontend =====
 // Serve React frontend
 // Serve React frontend
-const frontendBuildPath = path.join(__dirname, "frontend_build");
+// ===== Serve React Frontend =====
+const frontendBuildPath = path.join(__dirname, "build");
 app.use(express.static(frontendBuildPath));
 
-// ✅ FIX: Compatible with Express 5 — catch-all route
+// ✅ Compatible with Express 5 — catch-all route
 app.use((req, res, next) => {
   res.sendFile(path.join(frontendBuildPath, "index.html"));
 });
