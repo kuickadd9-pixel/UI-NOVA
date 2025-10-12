@@ -65,7 +65,8 @@ app.get("/api/profile", (req, res) => {
 // Serve React frontend
 // Serve React frontend
 // ===== Serve React Frontend =====
-const frontendBuildPath = path.join(__dirname, "build");
+const frontendBuildPath = path.join(__dirname, "../frontend_build");
+
 app.use(express.static(frontendBuildPath));
 
 // ✅ Compatible with Express 5 — catch-all route
