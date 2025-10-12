@@ -65,10 +65,10 @@ app.get("/api/profile", (req, res) => {
 const frontendBuildPath = path.join(__dirname, "frontend_build");
 app.use(express.static(frontendBuildPath));
 
-// Catch-all route for React Router
-app.get("/:pathMatch(.*)*", (req, res) => {
-  res.sendFile(path.join(frontendBuildPath, "index.html"));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
+
 
 // ===== Start Server =====
 app.listen(PORT, () => {
