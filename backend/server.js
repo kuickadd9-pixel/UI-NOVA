@@ -1,4 +1,3 @@
-// server.js
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
@@ -10,34 +9,30 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
-// ===== Middleware =====
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// ===== In-memory Users Store =====
+// In-memory users
 let users = [];
 
-// ===== API ROUTES =====
-
-// Signup route
+// API routes
 app.post("/api/signup", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
-    return res.status(400).json({ message: "Email and password are required" });
+    return res.status(400).json({ message: "Email and password required" });
 
-  const existing = users.find((u) => u.email === email);
-  if (existing) return res.status(400).json({ message: "User already exists" });
+  if (users.find(u => u.email === email))
+    return res.status(400).json({ message: "User already exists" });
 
   const hashed = await bcrypt.hash(password, 10);
   users.push({ email, password: hashed });
-  res.status(201).json({ message: "User created successfully" });
+  res.status(201).json({ message: "User created" });
 });
 
-// Login route
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
-  const user = users.find((u) => u.email === email);
-
+  const user = users.find(u => u.email === email);
   if (!user) return res.status(400).json({ message: "User not found" });
 
   const valid = await bcrypt.compare(password, user.password);
@@ -47,7 +42,6 @@ app.post("/api/login", async (req, res) => {
   res.json({ message: "Login successful", token });
 });
 
-// Protected route
 app.get("/api/profile", (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ message: "Missing token" });
@@ -56,22 +50,21 @@ app.get("/api/profile", (req, res) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     res.json({ message: "Access granted", user: decoded });
-  } catch (err) {
-    res.status(401).json({ message: "Invalid or expired token" });
+  } catch {
+    res.status(401).json({ message: "Invalid token" });
   }
 });
 
-// ===== Serve React Frontend =====
-// Serve React static files
+// Serve React frontend
 const frontendBuildPath = path.join(__dirname, "frontend_build");
 app.use(express.static(frontendBuildPath));
 
-// Catch-all route
-app.get('/:catchAll(.*)', (req, res) => {
+// Catch-all for React routing (Express 4)
+app.get('*', (req, res) => {
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
-// ===== Start Server =====
+// Start server
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
