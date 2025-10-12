@@ -61,19 +61,14 @@ app.get("/api/profile", (req, res) => {
   }
 });
 
-// ===== Serve React Frontend =====
-// Serve React frontend
-// Serve React frontend
-// ===== Serve React Frontend =====
-const frontendBuildPath = path.join(__dirname, "../frontend_build");
-
+// ===== Serve React Frontend - Express 5 compatible =====
+const frontendBuildPath = path.join(__dirname, "frontend_build");
 app.use(express.static(frontendBuildPath));
 
-// ✅ Compatible with Express 5 — catch-all route
-app.use((req, res, next) => {
+// Catch-all route for React Router
+app.get("/:pathMatch(.*)*", (req, res) => {
   res.sendFile(path.join(frontendBuildPath, "index.html"));
 });
-
 
 // ===== Start Server =====
 app.listen(PORT, () => {
