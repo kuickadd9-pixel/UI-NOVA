@@ -1,3 +1,4 @@
+// server.js
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
@@ -9,12 +10,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
-// Middleware
+// ===== Middleware =====
 app.use(cors());
 app.use(express.json());
 
-// ===== Example API Routes =====
+// ===== In-memory Users Store (Example) =====
 let users = [];
+
+// ===== API ROUTES =====
 
 // Signup route
 app.post("/api/signup", async (req, res) => {
@@ -63,8 +66,8 @@ const frontendBuildPath = path.join(__dirname, "frontend_build");
 app.use(express.static(frontendBuildPath));
 
 // Catch-all route (React Router support)
-app.get("*", (req, res) => {
-  res.sendFile(path.join(frontendBuildPath, "index.html"));
+app.get('/:any(*)', (req, res) => {
+  res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
 // ===== Start Server =====
