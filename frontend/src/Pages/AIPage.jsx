@@ -1,3 +1,4 @@
+// frontend/src/Pages/AIPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -51,7 +52,7 @@ const AIPage = () => {
       const data = await res.json();
       if (res.ok) setAIResult(data.result || JSON.stringify(data, null, 2));
       else setMessage(data.error || "AI request failed");
-    } catch (err) {
+    } catch {
       setMessage("Server error");
     } finally {
       setLoading(false);

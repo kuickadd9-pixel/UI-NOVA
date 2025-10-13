@@ -1,18 +1,19 @@
-import { Routes, Route } from "react-router-dom";
-import Login from "./Pages/Login";
-import Signup from "./Pages/Signup";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./Pages/Dashboard";
-import AIPage from "./Pages/AIPage"; // <-- import the new AI page
+import AIPage from "./Pages/AIPage";
+import AddProject from "./Pages/AddProject";
+import EditProject from "./Pages/EditProject";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/ai" element={<AIPage />} /> {/* <-- new route */}
-    </Routes>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/add" element={<AddProject />} />
+        <Route path="/edit/:id" element={<EditProject />} />
+        <Route path="/ai" element={<AIPage />} /> {/* <-- AI Page route */}
+      </Routes>
+    </Router>
   );
 }
 
