@@ -1,3 +1,4 @@
+// backend/server.js
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
@@ -12,10 +13,24 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
-app.use(cors());
+// ======= CORS CONFIG =======
+const corsOptions = {
+  origin: [
+    "http://localhost:3002",
+    "http://localhost:3003",
+    "https://kuickadd9-pixel-ui-nova.onrender.com",
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ FIX preflight CORS issue
+
 app.use(express.json());
 
-// File paths
+// ======= FILE PATHS =======
 const usersFile = path.join(__dirname, "db.json");
 const projectsFile = path.join(__dirname, "project.json");
 
@@ -124,7 +139,9 @@ app.post("/api/projects", authenticate, (req, res) => {
   };
 
   projects.push(newProject);
-  Array.isArray(db) ? writeJSON(projectsFile, projects) : writeJSON(projectsFile, { projects });
+  Array.isArray(db)
+    ? writeJSON(projectsFile, projects)
+    : writeJSON(projectsFile, { projects });
 
   res.status(201).json({ message: "Project added", project: newProject });
 });
@@ -143,7 +160,9 @@ app.delete("/api/projects/:id", authenticate, (req, res) => {
   let projects = Array.isArray(db) ? db : db.projects || [];
 
   projects = projects.filter((p) => p.id !== id);
-  Array.isArray(db) ? writeJSON(projectsFile, projects) : writeJSON(projectsFile, { projects });
+  Array.isArray(db)
+    ? writeJSON(projectsFile, projects)
+    : writeJSON(projectsFile, { projects });
 
   res.json({ message: "Project deleted" });
 });
@@ -159,23 +178,44 @@ app.put("/api/projects/:id", authenticate, (req, res) => {
   if (index === -1) return res.status(404).json({ message: "Project not found" });
 
   projects[index] = { ...projects[index], name, description };
-  Array.isArray(db) ? writeJSON(projectsFile, projects) : writeJSON(projectsFile, { projects });
+  Array.isArray(db)
+    ? writeJSON(projectsFile, projects)
+    : writeJSON(projectsFile, { projects });
 
   res.json({ message: "Project updated", project: projects[index] });
 });
 
 // ======= DEEPSEEK AI ROUTES =======
+app.post("/api/ai/:action", authenticate, async (req, res) => {
+  const { action } = req.params;
+  const { description, code } = req.body;
 
-// Generate project layout
-app.post("/api/ai/generate-layout", authenticate, async (req, res) => {
-  const { projectId, description } = req.body;
-  if (!projectId || !description)
-    return res.status(400).json({ error: "Missing projectId or description" });
+  let prompt = "";
+
+  switch (action) {
+    case "generate-layout":
+      prompt = `Create a full UI layout plan for this project: ${description}`;
+      break;
+    case "generate-project-desc":
+      prompt = `Write a detailed product description for this project: ${description}`;
+      break;
+    case "explain-code":
+      prompt = `Explain this code step-by-step:\n${code}`;
+      break;
+    default:
+      return res.status(400).json({ error: "Unknown AI action" });
+  }
 
   try {
     const response = await axios.post(
-      "https://api.deepseek.com/generate",
-      { projectId, description },
+      "https://api.deepseek.com/v1/chat/completions",
+      {
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: "You are an expert AI coding assistant." },
+          { role: "user", content: prompt },
+        ],
+      },
       {
         headers: {
           "Content-Type": "application/json",
@@ -183,61 +223,16 @@ app.post("/api/ai/generate-layout", authenticate, async (req, res) => {
         },
       }
     );
-    res.json(response.data);
+
+    const result = response.data.choices[0].message.content;
+    res.json({ result });
   } catch (err) {
-    console.error("DeepSeek Layout error:", err.message || err);
-    res.status(500).json({ error: "DeepSeek request failed" });
+    console.error("DeepSeek API error:", err.response?.data || err.message);
+    res.status(500).json({ error: "AI generation failed" });
   }
 });
 
-// Generate project description
-app.post("/api/ai/generate-project-desc", authenticate, async (req, res) => {
-  const { projectId, description } = req.body;
-  if (!projectId || !description)
-    return res.status(400).json({ error: "Missing projectId or description" });
-
-  try {
-    const response = await axios.post(
-      "https://api.deepseek.com/generate-project-desc",
-      { projectId, description },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.DEEPSEEK_KEY}`,
-        },
-      }
-    );
-    res.json(response.data);
-  } catch (err) {
-    console.error("DeepSeek Project Description error:", err.message || err);
-    res.status(500).json({ error: "DeepSeek request failed" });
-  }
-});
-
-// Explain code
-app.post("/api/ai/explain-code", authenticate, async (req, res) => {
-  const { code } = req.body;
-  if (!code) return res.status(400).json({ error: "Missing code" });
-
-  try {
-    const response = await axios.post(
-      "https://api.deepseek.com/explain-code",
-      { code },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.DEEPSEEK_KEY}`,
-        },
-      }
-    );
-    res.json(response.data);
-  } catch (err) {
-    console.error("DeepSeek Code Explanation error:", err.message || err);
-    res.status(500).json({ error: "DeepSeek request failed" });
-  }
-});
-
-// ======= FRONTEND SERVE =======
+// ======= FRONTEND SERVE (for Render hosting) =======
 const frontendBuildPath = path.join(__dirname, "frontend_build");
 app.use(express.static(frontendBuildPath));
 app.use((req, res) => {
