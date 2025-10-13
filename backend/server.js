@@ -37,14 +37,8 @@ app.post("/api/signup", async (req, res) => {
   if (!email || !password)
     return res.status(400).json({ message: "Email and password required" });
 
-  const users = readJSON(usersFile);
-  if (users.find(u => u.email === email))
-    return res.status(400).json({ message: "User already exists" });
+  
 
-  const hashed = await bcrypt.hash(password, 10);
-  users.push({ email, password: hashed });
-  writeJSON(usersFile, users);
-  res.status(201).json({ message: "User created" });
 });
 
 // Login
