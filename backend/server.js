@@ -24,9 +24,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
-
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // ✅ Handles preflight CORS
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 // ======= FILE PATHS =======
@@ -39,7 +38,6 @@ function readJSON(file) {
   const data = fs.readFileSync(file, "utf-8");
   return JSON.parse(data);
 }
-
 function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
@@ -123,8 +121,6 @@ const authenticate = (req, res, next) => {
 };
 
 // ======= PROJECT ROUTES =======
-
-// Add project
 app.post("/api/projects", authenticate, (req, res) => {
   const { name, description } = req.body;
   if (!name) return res.status(400).json({ message: "Project name required" });
@@ -147,14 +143,12 @@ app.post("/api/projects", authenticate, (req, res) => {
   res.status(201).json({ message: "Project added", project: newProject });
 });
 
-// Get all projects
 app.get("/api/projects", authenticate, (req, res) => {
   const db = readJSON(projectsFile);
   const projects = Array.isArray(db) ? db : db.projects || [];
   res.json(projects);
 });
 
-// Delete project
 app.delete("/api/projects/:id", authenticate, (req, res) => {
   const id = parseInt(req.params.id);
   const db = readJSON(projectsFile);
@@ -168,7 +162,6 @@ app.delete("/api/projects/:id", authenticate, (req, res) => {
   res.json({ message: "Project deleted" });
 });
 
-// Update project
 app.put("/api/projects/:id", authenticate, (req, res) => {
   const id = parseInt(req.params.id);
   const { name, description } = req.body;
@@ -237,8 +230,8 @@ app.post("/api/ai/:action", authenticate, async (req, res) => {
 const frontendBuildPath = path.join(__dirname, "../frontend/build");
 app.use(express.static(frontendBuildPath));
 
-// ✅ FIX: Updated wildcard for Express 5
-app.get("/*", (req, res) => {
+// ✅ FIX: Use app.use() for wildcard (Express v5 safe)
+app.use((req, res) => {
   res.sendFile(path.join(frontendBuildPath, "index.html"));
 });
 
