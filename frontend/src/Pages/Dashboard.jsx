@@ -102,7 +102,7 @@ const Dashboard = () => {
 
   const logout = () => {
     localStorage.removeItem("token");
-    navigate("/");
+    navigate("/login");
   };
 
   return (
@@ -128,6 +128,16 @@ const Dashboard = () => {
           {message.text}
         </div>
       )}
+
+      {/* AI Tools Button */}
+      <div className="mb-6">
+        <button
+          onClick={() => navigate("/ai")}
+          className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600"
+        >
+          Go to AI Tools
+        </button>
+      </div>
 
       <form
         onSubmit={editingProject ? handleUpdate : handleAdd}

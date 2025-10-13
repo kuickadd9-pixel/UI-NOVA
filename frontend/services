@@ -1,21 +1,62 @@
-// src/services/deepseek.js
+// src/services/deepseekService.js
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+function getAuthHeaders() {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function generateLayout(projectId, description) {
   try {
-    const response = await fetch("https://api.deepseek.com/generate", {
+    const res = await fetch(`${API_URL}/api/ai/generate-layout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.VITE_DEEPSEEK_KEY}`,
+        ...getAuthHeaders(),
       },
       body: JSON.stringify({ projectId, description }),
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to generate layout");
-    }
+    if (!res.ok) throw new Error("Failed to generate layout");
+    return await res.json();
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+}
 
-    const data = await response.json();
-    return data;
+export async function generateProjectDescription(projectId, description) {
+  try {
+    const res = await fetch(`${API_URL}/api/ai/generate-description`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ projectId, description }),
+    });
+
+    if (!res.ok) throw new Error("Failed to generate project description");
+    return await res.json();
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+}
+
+export async function explainCode(code) {
+  try {
+    const res = await fetch(`${API_URL}/api/ai/explain-code`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ code }),
+    });
+
+    if (!res.ok) throw new Error("Failed to explain code");
+    return await res.json();
   } catch (err) {
     console.error(err);
     throw err;

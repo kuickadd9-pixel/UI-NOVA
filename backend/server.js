@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
+const axios = require("axios");
 require("dotenv").config();
 
 const app = express();
@@ -18,14 +19,13 @@ app.use(express.json());
 const usersFile = path.join(__dirname, "db.json");
 const projectsFile = path.join(__dirname, "project.json");
 
-// Helper: Read JSON file
+// ======= HELPERS =======
 function readJSON(file) {
   if (!fs.existsSync(file)) return {};
   const data = fs.readFileSync(file, "utf-8");
   return JSON.parse(data);
 }
 
-// Helper: Write JSON file
 function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
@@ -41,21 +41,14 @@ app.post("/api/signup", async (req, res) => {
 
     const db = readJSON(usersFile);
     const users = Array.isArray(db) ? db : db.users || [];
-
-    const existingUser = users.find((user) => user.email === email);
-    if (existingUser) return res.status(400).json({ message: "Email already exists" });
+    if (users.find((u) => u.email === email))
+      return res.status(400).json({ message: "Email already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = { id: uuidv4(), name, email, password: hashedPassword };
 
     users.push(newUser);
-
-    // Save back correctly
-    if (Array.isArray(db)) {
-      writeJSON(usersFile, users);
-    } else {
-      writeJSON(usersFile, { users });
-    }
+    Array.isArray(db) ? writeJSON(usersFile, users) : writeJSON(usersFile, { users });
 
     res.status(201).json({ message: "Signup successful" });
   } catch (error) {
@@ -85,7 +78,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// Profile route
+// Profile
 app.get("/api/profile", (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ message: "Missing token" });
@@ -99,10 +92,24 @@ app.get("/api/profile", (req, res) => {
   }
 });
 
+// ======= AUTH MIDDLEWARE =======
+const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ message: "Missing token" });
+
+  const token = authHeader.split(" ")[1];
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
+
 // ======= PROJECT ROUTES =======
 
-// Add a project
-app.post("/api/projects", (req, res) => {
+// Add project
+app.post("/api/projects", authenticate, (req, res) => {
   const { name, description } = req.body;
   if (!name) return res.status(400).json({ message: "Project name required" });
 
@@ -117,31 +124,127 @@ app.post("/api/projects", (req, res) => {
   };
 
   projects.push(newProject);
-
-  if (Array.isArray(db)) {
-    writeJSON(projectsFile, projects);
-  } else {
-    writeJSON(projectsFile, { projects });
-  }
+  Array.isArray(db) ? writeJSON(projectsFile, projects) : writeJSON(projectsFile, { projects });
 
   res.status(201).json({ message: "Project added", project: newProject });
 });
 
 // Get all projects
-app.get("/api/projects", (req, res) => {
+app.get("/api/projects", authenticate, (req, res) => {
   const db = readJSON(projectsFile);
   const projects = Array.isArray(db) ? db : db.projects || [];
   res.json(projects);
 });
 
-// ======= FRONTEND ROUTE =======
+// Delete project
+app.delete("/api/projects/:id", authenticate, (req, res) => {
+  const id = parseInt(req.params.id);
+  const db = readJSON(projectsFile);
+  let projects = Array.isArray(db) ? db : db.projects || [];
+
+  projects = projects.filter((p) => p.id !== id);
+  Array.isArray(db) ? writeJSON(projectsFile, projects) : writeJSON(projectsFile, { projects });
+
+  res.json({ message: "Project deleted" });
+});
+
+// Update project
+app.put("/api/projects/:id", authenticate, (req, res) => {
+  const id = parseInt(req.params.id);
+  const { name, description } = req.body;
+  const db = readJSON(projectsFile);
+  const projects = Array.isArray(db) ? db : db.projects || [];
+
+  const index = projects.findIndex((p) => p.id === id);
+  if (index === -1) return res.status(404).json({ message: "Project not found" });
+
+  projects[index] = { ...projects[index], name, description };
+  Array.isArray(db) ? writeJSON(projectsFile, projects) : writeJSON(projectsFile, { projects });
+
+  res.json({ message: "Project updated", project: projects[index] });
+});
+
+// ======= DEEPSEEK AI ROUTES =======
+
+// Generate project layout
+app.post("/api/ai/generate-layout", authenticate, async (req, res) => {
+  const { projectId, description } = req.body;
+  if (!projectId || !description)
+    return res.status(400).json({ error: "Missing projectId or description" });
+
+  try {
+    const response = await axios.post(
+      "https://api.deepseek.com/generate",
+      { projectId, description },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.DEEPSEEK_KEY}`,
+        },
+      }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("DeepSeek Layout error:", err.message || err);
+    res.status(500).json({ error: "DeepSeek request failed" });
+  }
+});
+
+// Generate project description
+app.post("/api/ai/generate-project-desc", authenticate, async (req, res) => {
+  const { projectId, description } = req.body;
+  if (!projectId || !description)
+    return res.status(400).json({ error: "Missing projectId or description" });
+
+  try {
+    const response = await axios.post(
+      "https://api.deepseek.com/generate-project-desc",
+      { projectId, description },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.DEEPSEEK_KEY}`,
+        },
+      }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("DeepSeek Project Description error:", err.message || err);
+    res.status(500).json({ error: "DeepSeek request failed" });
+  }
+});
+
+// Explain code
+app.post("/api/ai/explain-code", authenticate, async (req, res) => {
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: "Missing code" });
+
+  try {
+    const response = await axios.post(
+      "https://api.deepseek.com/explain-code",
+      { code },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.DEEPSEEK_KEY}`,
+        },
+      }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("DeepSeek Code Explanation error:", err.message || err);
+    res.status(500).json({ error: "DeepSeek request failed" });
+  }
+});
+
+// ======= FRONTEND SERVE =======
 const frontendBuildPath = path.join(__dirname, "frontend_build");
 app.use(express.static(frontendBuildPath));
 app.use((req, res) => {
   res.sendFile(path.join(frontendBuildPath, "index.html"));
 });
 
-// Start server
+// ======= START SERVER =======
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
