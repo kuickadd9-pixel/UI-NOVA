@@ -26,15 +26,14 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // ✅ FIX preflight CORS issue
-
+app.options("*", cors(corsOptions)); // ✅ Handles preflight CORS
 app.use(express.json());
 
 // ======= FILE PATHS =======
 const usersFile = path.join(__dirname, "db.json");
 const projectsFile = path.join(__dirname, "project.json");
 
-// ======= HELPERS =======
+// ======= HELPER FUNCTIONS =======
 function readJSON(file) {
   if (!fs.existsSync(file)) return {};
   const data = fs.readFileSync(file, "utf-8");
@@ -63,7 +62,9 @@ app.post("/api/signup", async (req, res) => {
     const newUser = { id: uuidv4(), name, email, password: hashedPassword };
 
     users.push(newUser);
-    Array.isArray(db) ? writeJSON(usersFile, users) : writeJSON(usersFile, { users });
+    Array.isArray(db)
+      ? writeJSON(usersFile, users)
+      : writeJSON(usersFile, { users });
 
     res.status(201).json({ message: "Signup successful" });
   } catch (error) {
@@ -93,7 +94,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// Profile
+// Profile route
 app.get("/api/profile", (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ message: "Missing token" });
@@ -233,9 +234,11 @@ app.post("/api/ai/:action", authenticate, async (req, res) => {
 });
 
 // ======= FRONTEND SERVE (for Render hosting) =======
-const frontendBuildPath = path.join(__dirname, "frontend_build");
+const frontendBuildPath = path.join(__dirname, "../frontend/build");
 app.use(express.static(frontendBuildPath));
-app.use((req, res) => {
+
+// ✅ FIX: Updated wildcard for Express 5
+app.get("/*", (req, res) => {
   res.sendFile(path.join(frontendBuildPath, "index.html"));
 });
 
