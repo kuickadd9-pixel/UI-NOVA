@@ -20,7 +20,7 @@ app.use(express.json());
 
 // --------------------
 // In-memory users (demo purpose)
-// Replace with DB (e.g. MongoDB, Prisma, PostgreSQL)
+// Replace with DB (MongoDB / Prisma / PostgreSQL in production)
 // --------------------
 let users = [];
 
@@ -38,8 +38,9 @@ app.post("/api/register", async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    if (!username || !password)
+    if (!username || !password) {
       return res.status(400).json({ error: "Username and password are required" });
+    }
 
     const existing = users.find((u) => u.username === username);
     if (existing) return res.status(400).json({ error: "User already exists" });
@@ -74,11 +75,6 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// Protected route
-app.get("/api/profile", verifyToken, (req, res) => {
-  res.json({ message: `Welcome ${req.user.username}!`, user: req.user });
-});
-
 // Token verification middleware
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -94,15 +90,20 @@ function verifyToken(req, res, next) {
   }
 }
 
+// Protected route
+app.get("/api/profile", verifyToken, (req, res) => {
+  res.json({ message: `Welcome ${req.user.username}!`, user: req.user });
+});
+
 // --------------------
-// STATIC FRONTEND SERVING
+// STATIC FRONTEND SERVING (for Render)
 // --------------------
 const frontendPath = path.join(__dirname, "../frontend/dist");
 if (fs.existsSync(frontendPath)) {
   app.use(express.static(frontendPath));
 
-  // ✅ Express 5 fix: must use "/*"
-  app.get("/*", (req, res) => {
+  // ✅ Express 5 FIX — use regex route instead of '*'
+  app.get(/.*/, (req, res) => {
     res.sendFile(path.join(frontendPath, "index.html"));
   });
 } else {
