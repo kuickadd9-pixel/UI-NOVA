@@ -1,241 +1,117 @@
 // backend/server.js
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const fs = require("fs");
 const path = require("path");
-const { v4: uuidv4 } = require("uuid");
-const axios = require("axios");
-require("dotenv").config();
+const fs = require("fs");
 
+// Initialize express app
 const app = express();
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
+const JWT_SECRET = process.env.JWT_SECRET || "super_secret_key";
 
-// ======= CORS CONFIG =======
-const corsOptions = {
-  origin: [
-    "http://localhost:3002",
-    "http://localhost:3003",
-    "https://kuickadd9-pixel-ui-nova.onrender.com",
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-};
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+// --------------------
+// Middleware
+// --------------------
+app.use(cors());
 app.use(express.json());
 
-// ======= FILE PATHS =======
-const usersFile = path.join(__dirname, "db.json");
-const projectsFile = path.join(__dirname, "project.json");
+// --------------------
+// In-memory users (demo purpose)
+// Replace with DB (e.g. MongoDB, Prisma, PostgreSQL)
+// --------------------
+let users = [];
 
-// ======= HELPER FUNCTIONS =======
-function readJSON(file) {
-  if (!fs.existsSync(file)) return {};
-  const data = fs.readFileSync(file, "utf-8");
-  return JSON.parse(data);
-}
-function writeJSON(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
-}
+// --------------------
+// ROUTES
+// --------------------
 
-// ======= AUTH ROUTES =======
+// Health check
+app.get("/api", (req, res) => {
+  res.json({ message: "Server is running successfully ✅" });
+});
 
-// Signup
-app.post("/api/signup", async (req, res) => {
+// Register route
+app.post("/api/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password)
-      return res.status(400).json({ message: "All fields are required" });
+    const { username, password } = req.body;
 
-    const db = readJSON(usersFile);
-    const users = Array.isArray(db) ? db : db.users || [];
-    if (users.find((u) => u.email === email))
-      return res.status(400).json({ message: "Email already exists" });
+    if (!username || !password)
+      return res.status(400).json({ error: "Username and password are required" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = { id: uuidv4(), name, email, password: hashedPassword };
+    const existing = users.find((u) => u.username === username);
+    if (existing) return res.status(400).json({ error: "User already exists" });
 
+    const hashed = await bcrypt.hash(password, 10);
+    const newUser = { id: users.length + 1, username, password: hashed };
     users.push(newUser);
-    Array.isArray(db)
-      ? writeJSON(usersFile, users)
-      : writeJSON(usersFile, { users });
 
-    res.status(201).json({ message: "Signup successful" });
-  } catch (error) {
-    console.error("Signup error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(201).json({ message: "User registered successfully" });
+  } catch (err) {
+    console.error("Register Error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// Login
+// Login route
 app.post("/api/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const db = readJSON(usersFile);
-    const users = Array.isArray(db) ? db : db.users || [];
+    const { username, password } = req.body;
+    const user = users.find((u) => u.username === username);
 
-    const user = users.find((u) => u.email === email);
-    if (!user) return res.status(400).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ message: "Invalid password" });
+    if (!valid) return res.status(401).json({ error: "Invalid password" });
 
-    const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: "2h" });
+    const token = jwt.sign({ id: user.id, username }, JWT_SECRET, { expiresIn: "1h" });
     res.json({ message: "Login successful", token });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Server error" });
+  } catch (err) {
+    console.error("Login Error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// Profile route
-app.get("/api/profile", (req, res) => {
+// Protected route
+app.get("/api/profile", verifyToken, (req, res) => {
+  res.json({ message: `Welcome ${req.user.username}!`, user: req.user });
+});
+
+// Token verification middleware
+function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: "Missing token" });
+  if (!authHeader) return res.status(401).json({ error: "No token provided" });
 
   const token = authHeader.split(" ")[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    res.json({ message: "Access granted", user: decoded });
-  } catch {
-    res.status(401).json({ message: "Invalid token" });
-  }
-});
-
-// ======= AUTH MIDDLEWARE =======
-const authenticate = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: "Missing token" });
-
-  const token = authHeader.split(" ")[1];
-  try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
     next();
-  } catch {
-    return res.status(401).json({ message: "Invalid token" });
-  }
-};
-
-// ======= PROJECT ROUTES =======
-app.post("/api/projects", authenticate, (req, res) => {
-  const { name, description } = req.body;
-  if (!name) return res.status(400).json({ message: "Project name required" });
-
-  const db = readJSON(projectsFile);
-  const projects = Array.isArray(db) ? db : db.projects || [];
-
-  const newProject = {
-    id: Date.now(),
-    name,
-    description: description || "",
-    createdAt: new Date().toISOString(),
-  };
-
-  projects.push(newProject);
-  Array.isArray(db)
-    ? writeJSON(projectsFile, projects)
-    : writeJSON(projectsFile, { projects });
-
-  res.status(201).json({ message: "Project added", project: newProject });
-});
-
-app.get("/api/projects", authenticate, (req, res) => {
-  const db = readJSON(projectsFile);
-  const projects = Array.isArray(db) ? db : db.projects || [];
-  res.json(projects);
-});
-
-app.delete("/api/projects/:id", authenticate, (req, res) => {
-  const id = parseInt(req.params.id);
-  const db = readJSON(projectsFile);
-  let projects = Array.isArray(db) ? db : db.projects || [];
-
-  projects = projects.filter((p) => p.id !== id);
-  Array.isArray(db)
-    ? writeJSON(projectsFile, projects)
-    : writeJSON(projectsFile, { projects });
-
-  res.json({ message: "Project deleted" });
-});
-
-app.put("/api/projects/:id", authenticate, (req, res) => {
-  const id = parseInt(req.params.id);
-  const { name, description } = req.body;
-  const db = readJSON(projectsFile);
-  const projects = Array.isArray(db) ? db : db.projects || [];
-
-  const index = projects.findIndex((p) => p.id === id);
-  if (index === -1) return res.status(404).json({ message: "Project not found" });
-
-  projects[index] = { ...projects[index], name, description };
-  Array.isArray(db)
-    ? writeJSON(projectsFile, projects)
-    : writeJSON(projectsFile, { projects });
-
-  res.json({ message: "Project updated", project: projects[index] });
-});
-
-// ======= DEEPSEEK AI ROUTES =======
-app.post("/api/ai/:action", authenticate, async (req, res) => {
-  const { action } = req.params;
-  const { description, code } = req.body;
-
-  let prompt = "";
-
-  switch (action) {
-    case "generate-layout":
-      prompt = `Create a full UI layout plan for this project: ${description}`;
-      break;
-    case "generate-project-desc":
-      prompt = `Write a detailed product description for this project: ${description}`;
-      break;
-    case "explain-code":
-      prompt = `Explain this code step-by-step:\n${code}`;
-      break;
-    default:
-      return res.status(400).json({ error: "Unknown AI action" });
-  }
-
-  try {
-    const response = await axios.post(
-      "https://api.deepseek.com/v1/chat/completions",
-      {
-        model: "deepseek-chat",
-        messages: [
-          { role: "system", content: "You are an expert AI coding assistant." },
-          { role: "user", content: prompt },
-        ],
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.DEEPSEEK_KEY}`,
-        },
-      }
-    );
-
-    const result = response.data.choices[0].message.content;
-    res.json({ result });
   } catch (err) {
-    console.error("DeepSeek API error:", err.response?.data || err.message);
-    res.status(500).json({ error: "AI generation failed" });
+    res.status(403).json({ error: "Invalid or expired token" });
   }
-});
+}
 
-// ======= FRONTEND SERVE (for Render hosting) =======
-const frontendBuildPath = path.join(__dirname, "../frontend/build");
-app.use(express.static(frontendBuildPath));
+// --------------------
+// STATIC FRONTEND SERVING
+// --------------------
+const frontendPath = path.join(__dirname, "../frontend/dist");
+if (fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
 
-// ✅ FIX: Use app.use() for wildcard (Express v5 safe)
-app.use((req, res) => {
-  res.sendFile(path.join(frontendBuildPath, "index.html"));
-});
+  // ✅ Express 5 fix: must use "/*"
+  app.get("/*", (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
+  });
+} else {
+  console.log("⚠️ Frontend build not found. Run `npm run build` in frontend/");
+}
 
-// ======= START SERVER =======
+// --------------------
+// START SERVER
+// --------------------
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
