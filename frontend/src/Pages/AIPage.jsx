@@ -1,7 +1,8 @@
 // frontend/src/Pages/AIPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 const AIPage = () => {
   const navigate = useNavigate();
@@ -169,7 +170,9 @@ const AIPage = () => {
       {aiResult && (
         <div className="bg-gray-100 p-4 rounded shadow-md max-w-2xl">
           <h3 className="font-semibold mb-2">AI Result:</h3>
-          <SyntaxHighlighter language="json">{aiResult}</SyntaxHighlighter>
+          <SyntaxHighlighter language="javascript" style={atomOneDark}>
+            {aiResult}
+          </SyntaxHighlighter>
         </div>
       )}
     </div>

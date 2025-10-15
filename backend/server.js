@@ -7,7 +7,9 @@ const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
 
+// --------------------
 // Initialize express app
+// --------------------
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_key";
@@ -15,7 +17,18 @@ const JWT_SECRET = process.env.JWT_SECRET || "super_secret_key";
 // --------------------
 // Middleware
 // --------------------
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000", // for local frontend dev
+      "https://ui-novaa-frontend.onrender.com", // your deployed frontend domain
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // --------------------
@@ -31,6 +44,11 @@ let users = [];
 // Health check
 app.get("/api", (req, res) => {
   res.json({ message: "Server is running successfully ✅" });
+});
+
+// Test route to verify CORS works
+app.get("/api/test", (req, res) => {
+  res.json({ success: true, message: "CORS and server are working fine 🎯" });
 });
 
 // Register route
@@ -49,9 +67,10 @@ app.post("/api/register", async (req, res) => {
     const newUser = { id: users.length + 1, username, password: hashed };
     users.push(newUser);
 
+    console.log("✅ New user registered:", username);
     res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
-    console.error("Register Error:", err);
+    console.error("❌ Register Error:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -70,7 +89,7 @@ app.post("/api/login", async (req, res) => {
     const token = jwt.sign({ id: user.id, username }, JWT_SECRET, { expiresIn: "1h" });
     res.json({ message: "Login successful", token });
   } catch (err) {
-    console.error("Login Error:", err);
+    console.error("❌ Login Error:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -99,10 +118,11 @@ app.get("/api/profile", verifyToken, (req, res) => {
 // STATIC FRONTEND SERVING (for Render)
 // --------------------
 const frontendPath = path.join(__dirname, "../frontend/dist");
+
 if (fs.existsSync(frontendPath)) {
   app.use(express.static(frontendPath));
 
-  // ✅ Express 5 FIX — use regex route instead of '*'
+  // ✅ Express 5 fix — regex route for SPA fallback
   app.get(/.*/, (req, res) => {
     res.sendFile(path.join(frontendPath, "index.html"));
   });
