@@ -11,22 +11,23 @@ const Login = () => {
     setMessage("");
 
     try {
-      const res = await fetch('https://ui-novaa-12.onrender.com/api/login', { 
-
+      const res = await fetch("http://localhost:5000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
       const data = await res.json();
+
       if (res.ok) {
         localStorage.setItem("token", data.token);
         navigate("/dashboard");
       } else {
-        setMessage(data.message || "Login failed");
+        setMessage(data.error || "Login failed");
       }
-    } catch {
-      setMessage("Server error");
+    } catch (err) {
+      console.error("Login error:", err);
+      setMessage("Server error. Please try again.");
     }
   };
 
@@ -50,7 +51,9 @@ const Login = () => {
           required
           style={styles.input}
         />
-        <button type="submit" style={styles.button}>Login</button>
+        <button type="submit" style={styles.button}>
+          Login
+        </button>
       </form>
       {message && <p>{message}</p>}
     </div>
@@ -59,9 +62,26 @@ const Login = () => {
 
 const styles = {
   container: { padding: "40px", textAlign: "center" },
-  form: { display: "flex", flexDirection: "column", gap: "10px", width: "250px", margin: "0 auto" },
-  input: { padding: "10px", borderRadius: "5px", border: "1px solid #ccc" },
-  button: { padding: "10px", border: "none", borderRadius: "5px", background: "#007bff", color: "white" },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    width: "250px",
+    margin: "0 auto",
+  },
+  input: {
+    padding: "10px",
+    borderRadius: "5px",
+    border: "1px solid #ccc",
+  },
+  button: {
+    padding: "10px",
+    border: "none",
+    borderRadius: "5px",
+    background: "#007bff",
+    color: "white",
+    cursor: "pointer",
+  },
 };
 
 export default Login;

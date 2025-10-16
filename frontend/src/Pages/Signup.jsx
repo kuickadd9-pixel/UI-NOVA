@@ -18,46 +18,59 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const API_URL = process.env.REACT_APP_API_URL;
+      // ✅ Use localhost in dev, empty in production (Render)
+      const API_URL =
+        window.location.hostname === "localhost"
+          ? "http://localhost:5000"
+          : "";
+
       const res = await fetch(`${API_URL}/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+        }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.message || "Signup failed");
-        setLoading(false);
-        return;
-      }
+      const data = await res.json();
 
-      alert("Signup successful! Please login.");
-      navigate("/login");
+      if (!res.ok) {
+        setError(data.message || "Signup failed");
+      } else {
+        alert("✅ Signup successful! You can now log in.");
+        navigate("/login");
+      }
     } catch (err) {
-      console.error(err);
-      setError("Network error, please try again.");
+      console.error("Signup error:", err);
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <form
         onSubmit={handleSubmit}
         className="bg-white shadow-lg rounded-xl p-8 w-96"
       >
-        <h2 className="text-2xl font-semibold text-center mb-4">Create Account</h2>
+        <h2 className="text-2xl font-semibold text-center mb-4 text-blue-700">
+          Create an Account
+        </h2>
 
-        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+        {error && (
+          <p className="text-red-500 text-sm text-center mb-3">{error}</p>
+        )}
 
         <input
           type="text"
           name="name"
           placeholder="Full Name"
           onChange={handleChange}
-          className="border p-2 w-full mb-3 rounded-md"
+          value={form.name}
+          className="border border-gray-300 p-2 w-full mb-3 rounded-md focus:ring-2 focus:ring-blue-500"
           required
         />
         <input
@@ -65,7 +78,8 @@ export default function Signup() {
           name="email"
           placeholder="Email"
           onChange={handleChange}
-          className="border p-2 w-full mb-3 rounded-md"
+          value={form.email}
+          className="border border-gray-300 p-2 w-full mb-3 rounded-md focus:ring-2 focus:ring-blue-500"
           required
         />
         <input
@@ -73,12 +87,14 @@ export default function Signup() {
           name="password"
           placeholder="Password"
           onChange={handleChange}
-          className="border p-2 w-full mb-4 rounded-md"
+          value={form.password}
+          className="border border-gray-300 p-2 w-full mb-4 rounded-md focus:ring-2 focus:ring-blue-500"
           required
         />
+
         <button
           type="submit"
-          className={`bg-blue-600 text-white py-2 rounded-md w-full hover:bg-blue-700 transition ${
+          className={`bg-blue-600 text-white py-2 rounded-md w-full hover:bg-blue-700 transition-all ${
             loading ? "opacity-70 cursor-not-allowed" : ""
           }`}
           disabled={loading}
