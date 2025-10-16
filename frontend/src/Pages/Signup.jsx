@@ -19,18 +19,19 @@ export default function Signup() {
     try {
       // ✅ Automatically switch between local and production backend
       const API_URL =
-        window.location.hostname === "localhost"
-          ? "http://localhost:5000"
-          : "https://ui-nova-1j1v-backend.onrender.com"; // 🔗 Replace with your actual Render backend URL
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://ui-nova-backend.onrender.com"; // 👈 your actual backend Render URL
 
-      const res = await fetch(`${API_URL}/api/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: form.username,
-          password: form.password,
-        }),
-      });
+const res = await fetch(`${API_URL}/api/register`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    username: form.username,
+    password: form.password,
+  }),
+});
+
 
       const data = await res.json();
 

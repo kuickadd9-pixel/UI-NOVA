@@ -21,8 +21,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://ui-nova-frontend.onrender.com",
-      "https://ui-nova-1j1v.onrender.com", // ✅ add this
+      "https://ui-nova-1j1v.onrender.com",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
