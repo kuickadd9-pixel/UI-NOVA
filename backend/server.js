@@ -20,14 +20,16 @@ const JWT_SECRET = process.env.JWT_SECRET || "super_secret_key";
 app.use(
   cors({
     origin: [
-      "http://localhost:3000", // for local frontend dev
-      "https://ui-novaa-frontend.onrender.com", // your deployed frontend domain
+      "http://localhost:3000",
+      "https://ui-novaa-frontend.onrender.com",
+      "https://ui-nova-1j1v.onrender.com", // ✅ add this
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
+
 
 app.use(express.json());
 
