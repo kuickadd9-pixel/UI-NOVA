@@ -1,10 +1,9 @@
-// frontend/src/pages/Signup.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -18,18 +17,17 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      // ✅ Use localhost in dev, empty in production (Render)
+      // ✅ Automatically switch between local and production backend
       const API_URL =
         window.location.hostname === "localhost"
           ? "http://localhost:5000"
-          : "";
+          : "https://ui-nova-1j1v-backend.onrender.com"; // 🔗 Replace with your actual Render backend URL
 
       const res = await fetch(`${API_URL}/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: form.name,
-          email: form.email,
+          username: form.username,
           password: form.password,
         }),
       });
@@ -37,7 +35,7 @@ export default function Signup() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "Signup failed");
+        setError(data.error || "Signup failed. Try again.");
       } else {
         alert("✅ Signup successful! You can now log in.");
         navigate("/login");
@@ -66,22 +64,14 @@ export default function Signup() {
 
         <input
           type="text"
-          name="name"
-          placeholder="Full Name"
+          name="username"
+          placeholder="Username"
           onChange={handleChange}
-          value={form.name}
+          value={form.username}
           className="border border-gray-300 p-2 w-full mb-3 rounded-md focus:ring-2 focus:ring-blue-500"
           required
         />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          onChange={handleChange}
-          value={form.email}
-          className="border border-gray-300 p-2 w-full mb-3 rounded-md focus:ring-2 focus:ring-blue-500"
-          required
-        />
+
         <input
           type="password"
           name="password"

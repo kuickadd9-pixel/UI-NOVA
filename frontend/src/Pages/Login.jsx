@@ -1,87 +1,106 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
-const Login = () => {
+export default function Login() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [message, setMessage] = useState("");
+  const [form, setForm] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
+    setError("");
+    setLoading(true);
 
     try {
-  const res = await fetch(`${API_URL}/api/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(form),
-  });
+      // ✅ Use correct backend automatically
+      const API_URL =
+        window.location.hostname === "localhost"
+          ? "http://localhost:5000"
+          : "https://ui-nova-backend.onrender.com"; // ⚠️ Replace with your actual backend Render URL
+
+      const res = await fetch(`${API_URL}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: form.username,
+          password: form.password,
+        }),
+      });
 
       const data = await res.json();
 
-      if (res.ok) {
-        localStorage.setItem("token", data.token);
-        navigate("/dashboard");
+      if (!res.ok) {
+        setError(data.error || "Login failed. Check your credentials.");
       } else {
-        setMessage(data.error || "Login failed");
+        // ✅ Save token (optional for protected routes)
+        localStorage.setItem("token", data.token);
+        alert("✅ Login successful!");
+        navigate("/"); // redirect to dashboard or home
       }
     } catch (err) {
       console.error("Login error:", err);
-      setMessage("Server error. Please try again.");
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Login</h2>
-      <form onSubmit={handleLogin} style={styles.form}>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-lg rounded-xl p-8 w-96"
+      >
+        <h2 className="text-2xl font-semibold text-center mb-4 text-blue-700">
+          Login to Your Account
+        </h2>
+
+        {error && (
+          <p className="text-red-500 text-sm text-center mb-3">{error}</p>
+        )}
+
         <input
-          type="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          type="text"
+          name="username"
+          placeholder="Username"
+          onChange={handleChange}
+          value={form.username}
+          className="border border-gray-300 p-2 w-full mb-3 rounded-md focus:ring-2 focus:ring-blue-500"
           required
-          style={styles.input}
         />
+
         <input
           type="password"
+          name="password"
           placeholder="Password"
+          onChange={handleChange}
           value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          className="border border-gray-300 p-2 w-full mb-4 rounded-md focus:ring-2 focus:ring-blue-500"
           required
-          style={styles.input}
         />
-        <button type="submit" style={styles.button}>
-          Login
+
+        <button
+          type="submit"
+          className={`bg-blue-600 text-white py-2 rounded-md w-full hover:bg-blue-700 transition-all ${
+            loading ? "opacity-70 cursor-not-allowed" : ""
+          }`}
+          disabled={loading}
+        >
+          {loading ? "Logging in..." : "Login"}
         </button>
+
+        <p className="text-center text-sm mt-4 text-gray-600">
+          Don’t have an account?{" "}
+          <Link to="/signup" className="text-blue-600 hover:underline">
+            Sign Up
+          </Link>
+        </p>
       </form>
-      {message && <p>{message}</p>}
     </div>
   );
-};
-
-const styles = {
-  container: { padding: "40px", textAlign: "center" },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    width: "250px",
-    margin: "0 auto",
-  },
-  input: {
-    padding: "10px",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
-  },
-  button: {
-    padding: "10px",
-    border: "none",
-    borderRadius: "5px",
-    background: "#007bff",
-    color: "white",
-    cursor: "pointer",
-  },
-};
-
-export default Login;
+}
