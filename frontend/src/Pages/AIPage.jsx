@@ -1,4 +1,3 @@
-// frontend/src/Pages/AIPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SyntaxHighlighter from "react-syntax-highlighter";
@@ -17,7 +16,7 @@ const AIPage = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Fetch projects
+  // Fetch all projects for the logged-in user
   const fetchProjects = async () => {
     try {
       const res = await fetch(`${API_URL}/api/projects`, {
@@ -27,20 +26,24 @@ const AIPage = () => {
       setProjects(data);
       if (data.length > 0) setSelectedProject(data[0].id);
     } catch {
-      setMessage("Failed to load projects");
+      setMessage("Failed to load projects. Check your backend.");
     }
   };
 
   useEffect(() => {
-    if (!token) navigate("/login");
-    else fetchProjects();
+    if (!token) {
+      navigate("/login");
+    } else {
+      fetchProjects();
+    }
   }, []);
 
-  // Generic AI call
+  // Generic AI call helper
   const handleAICall = async (endpoint, body) => {
     setLoading(true);
     setAIResult("");
     setMessage("");
+
     try {
       const res = await fetch(`${API_URL}/api/ai/${endpoint}`, {
         method: "POST",
@@ -50,20 +53,22 @@ const AIPage = () => {
         },
         body: JSON.stringify(body),
       });
+
       const data = await res.json();
+
       if (res.ok) setAIResult(data.result || JSON.stringify(data, null, 2));
       else setMessage(data.error || "AI request failed");
     } catch {
-      setMessage("Server error");
+      setMessage("Server error. Check if backend is running.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handlers
+  // Handlers for AI Tools
   const generateLayout = () => {
     if (!selectedProject || !descriptionInput) {
-      setMessage("Select a project and enter description");
+      setMessage("Select a project and enter description.");
       return;
     }
     handleAICall("generate-layout", {
@@ -74,7 +79,7 @@ const AIPage = () => {
 
   const generateProjectDesc = () => {
     if (!selectedProject || !descriptionInput) {
-      setMessage("Select a project and enter description");
+      setMessage("Select a project and enter description.");
       return;
     }
     handleAICall("generate-project-desc", {
@@ -85,7 +90,7 @@ const AIPage = () => {
 
   const explainCode = () => {
     if (!codeInput) {
-      setMessage("Enter code to explain");
+      setMessage("Enter code to explain.");
       return;
     }
     handleAICall("explain-code", { code: codeInput });
@@ -112,6 +117,7 @@ const AIPage = () => {
         <div className="p-3 mb-4 rounded bg-red-100 text-red-700">{message}</div>
       )}
 
+      {/* Project-based AI Tools */}
       <div className="bg-white p-4 rounded shadow-md mb-6 max-w-2xl">
         <h2 className="text-lg font-semibold mb-3">Project Selection</h2>
         <select
@@ -149,6 +155,7 @@ const AIPage = () => {
         </div>
       </div>
 
+      {/* Code explanation */}
       <div className="bg-white p-4 rounded shadow-md mb-6 max-w-2xl">
         <h2 className="text-lg font-semibold mb-3">Explain Code</h2>
         <textarea

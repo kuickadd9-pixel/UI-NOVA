@@ -1,11 +1,14 @@
+// frontend/src/Pages/Signup.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -17,33 +20,29 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      // ✅ Automatically switch between local and production backend
-      const API_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:5000"
-    : "https://ui-nova-backend.onrender.com"; // 👈 your actual backend Render URL
+      console.log("Debug: API_URL =", API_URL);
+      console.log("Debug: form data =", form);
 
-const res = await fetch(`${API_URL}/api/register`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    username: form.username,
-    password: form.password,
-  }),
-});
+      const res = await fetch(`${API_URL}/api/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
+      console.log("Debug: raw response =", res);
 
       const data = await res.json();
+      console.log("Debug: response data =", data);
 
       if (!res.ok) {
-        setError(data.error || "Signup failed. Try again.");
+        setError(data.error || "Signup failed. Check your inputs.");
       } else {
         alert("✅ Signup successful! You can now log in.");
         navigate("/login");
       }
     } catch (err) {
       console.error("Signup error:", err);
-      setError("Network error. Please try again.");
+      setError("Network error. Check if backend is running and API_URL is correct.");
     } finally {
       setLoading(false);
     }
@@ -51,24 +50,29 @@ const res = await fetch(`${API_URL}/api/register`, {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-lg rounded-xl p-8 w-96"
-      >
+      <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-xl p-8 w-96">
         <h2 className="text-2xl font-semibold text-center mb-4 text-blue-700">
           Create an Account
         </h2>
 
-        {error && (
-          <p className="text-red-500 text-sm text-center mb-3">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-sm text-center mb-3">{error}</p>}
 
         <input
           type="text"
-          name="username"
-          placeholder="Username"
+          name="name"
+          placeholder="Full Name"
+          value={form.name}
           onChange={handleChange}
-          value={form.username}
+          className="border border-gray-300 p-2 w-full mb-3 rounded-md focus:ring-2 focus:ring-blue-500"
+          required
+        />
+
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
           className="border border-gray-300 p-2 w-full mb-3 rounded-md focus:ring-2 focus:ring-blue-500"
           required
         />
@@ -77,8 +81,8 @@ const res = await fetch(`${API_URL}/api/register`, {
           type="password"
           name="password"
           placeholder="Password"
-          onChange={handleChange}
           value={form.password}
+          onChange={handleChange}
           className="border border-gray-300 p-2 w-full mb-4 rounded-md focus:ring-2 focus:ring-blue-500"
           required
         />
@@ -96,7 +100,7 @@ const res = await fetch(`${API_URL}/api/register`, {
         <p className="text-center text-sm mt-4 text-gray-600">
           Already have an account?{" "}
           <Link to="/login" className="text-blue-600 hover:underline">
-            Login
+            Log In
           </Link>
         </p>
       </form>

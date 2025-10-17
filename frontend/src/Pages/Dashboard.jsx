@@ -3,16 +3,46 @@ import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [projects, setProjects] = useState([]);
   const [form, setForm] = useState({ name: "", description: "" });
   const [message, setMessage] = useState({ text: "", type: "" });
   const [editingProject, setEditingProject] = useState(null);
-  const token = localStorage.getItem("token");
 
-  // ✅ Automatically use correct backend URL (Render or Local)
+  const token = localStorage.getItem("token");
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-  // Fetch all projects
+  // --------------------
+  // Fetch user profile
+  // --------------------
+  const fetchProfile = async () => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({
+          text: data.error || "Failed to load profile",
+          type: "error",
+        });
+        localStorage.removeItem("token");
+        navigate("/login");
+      } else {
+        setUser(data.user);
+      }
+    } catch {
+      setMessage({ text: "Network error fetching profile", type: "error" });
+    }
+  };
+
+  // --------------------
+  // Fetch projects
+  // --------------------
   const fetchProjects = async () => {
     try {
       const res = await fetch(`${API_URL}/api/projects`, {
@@ -26,10 +56,13 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    fetchProfile();
     fetchProjects();
   }, []);
 
-  // Add project
+  // --------------------
+  // Add / Update Project
+  // --------------------
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
@@ -54,27 +87,6 @@ const Dashboard = () => {
     }
   };
 
-  // Delete project
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this project?")) return;
-    try {
-      await fetch(`${API_URL}/api/projects/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchProjects();
-    } catch {
-      setMessage({ text: "Server error while deleting", type: "error" });
-    }
-  };
-
-  // Edit project
-  const handleEdit = (project) => {
-    setEditingProject(project);
-    setForm({ name: project.name, description: project.description });
-  };
-
-  // Update project
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
@@ -100,23 +112,62 @@ const Dashboard = () => {
     }
   };
 
+  // --------------------
+  // Edit / Delete Project
+  // --------------------
+  const handleEdit = (project) => {
+    setEditingProject(project);
+    setForm({ name: project.name, description: project.description });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this project?")) return;
+    try {
+      await fetch(`${API_URL}/api/projects/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchProjects();
+    } catch {
+      setMessage({ text: "Server error while deleting", type: "error" });
+    }
+  };
+
+  // --------------------
+  // Logout
+  // --------------------
   const logout = () => {
     localStorage.removeItem("token");
     navigate("/login");
   };
 
+  if (!user) return <p className="text-center mt-20">Loading...</p>;
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <button
-          onClick={logout}
-          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-        >
-          Logout
-        </button>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Welcome, {user.name}!
+        </h1>
+        <div className="flex gap-3">
+          {/* ✅ Go to AI Tools Button */}
+          <button
+            onClick={() => navigate("/dashai")}
+            className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition"
+          >
+            Open AI Tools
+          </button>
+          <button
+            onClick={logout}
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
+      {/* Alert Message */}
       {message.text && (
         <div
           className={`p-3 mb-4 rounded ${
@@ -129,16 +180,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* AI Tools Button */}
-      <div className="mb-6">
-        <button
-          onClick={() => navigate("/ai")}
-          className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600"
-        >
-          Go to AI Tools
-        </button>
-      </div>
-
+      {/* Add / Edit Project Form */}
       <form
         onSubmit={editingProject ? handleUpdate : handleAdd}
         className="bg-white p-4 rounded-lg shadow-md max-w-md mb-6"
@@ -160,23 +202,26 @@ const Dashboard = () => {
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           className="w-full p-2 mb-3 border rounded"
         />
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          {editingProject ? "Update" : "Add"}
-        </button>
-        {editingProject && (
+        <div>
           <button
-            type="button"
-            onClick={() => setEditingProject(null)}
-            className="ml-3 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+            type="submit"
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
-            Cancel
+            {editingProject ? "Update" : "Add"}
           </button>
-        )}
+          {editingProject && (
+            <button
+              type="button"
+              onClick={() => setEditingProject(null)}
+              className="ml-3 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
+      {/* Projects List */}
       <h2 className="text-xl font-semibold mb-3">Your Projects</h2>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {projects.length > 0 ? (

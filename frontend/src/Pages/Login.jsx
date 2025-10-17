@@ -1,11 +1,14 @@
+// frontend/src/Pages/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -17,34 +20,30 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // ✅ Use correct backend automatically
-      const API_URL =
-        window.location.hostname === "localhost"
-          ? "http://localhost:5000"
-          : "https://ui-nova-backend.onrender.com"; // ⚠️ Replace with your actual backend Render URL
+      console.log("Debug: API_URL =", API_URL);
+      console.log("Debug: form data =", form);
 
       const res = await fetch(`${API_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: form.username,
-          password: form.password,
-        }),
+        body: JSON.stringify(form),
       });
 
+      console.log("Debug: raw response =", res);
+
       const data = await res.json();
+      console.log("Debug: response data =", data);
 
       if (!res.ok) {
         setError(data.error || "Login failed. Check your credentials.");
       } else {
-        // ✅ Save token (optional for protected routes)
         localStorage.setItem("token", data.token);
         alert("✅ Login successful!");
-        navigate("/"); // redirect to dashboard or home
+        navigate("/dashboard");
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Network error. Please try again.");
+      setError("Network error. Check if backend is running and API_URL is correct.");
     } finally {
       setLoading(false);
     }
@@ -52,24 +51,19 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-lg rounded-xl p-8 w-96"
-      >
+      <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-xl p-8 w-96">
         <h2 className="text-2xl font-semibold text-center mb-4 text-blue-700">
           Login to Your Account
         </h2>
 
-        {error && (
-          <p className="text-red-500 text-sm text-center mb-3">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-sm text-center mb-3">{error}</p>}
 
         <input
-          type="text"
-          name="username"
-          placeholder="Username"
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={form.email}
           onChange={handleChange}
-          value={form.username}
           className="border border-gray-300 p-2 w-full mb-3 rounded-md focus:ring-2 focus:ring-blue-500"
           required
         />
@@ -78,8 +72,8 @@ export default function Login() {
           type="password"
           name="password"
           placeholder="Password"
-          onChange={handleChange}
           value={form.password}
+          onChange={handleChange}
           className="border border-gray-300 p-2 w-full mb-4 rounded-md focus:ring-2 focus:ring-blue-500"
           required
         />
